@@ -1,16 +1,26 @@
-# Ignore everything
-*
+# Ignore everything at the top level
+/*
+
+# Unignore all directories so we can traverse into subfolders
+!*/
+
+# Unignore Python files anywhere
+!*.py
+!**/*.py
 
 # Do not track these folders
 /Data/
 /Logs/
 
-# But track Python files everywhere else
-!*.py
-
-# Explicitly ignore data files
+# Explicitly ignore data files everywhere
 *.csv
+**/*.csv
 *.json
+**/*.json
+
+# Ignore Python bytecode cache and compiled files
+__pycache__/
+*.py[cod]
 
 # Allow .gitignore itself
 !.gitignore
