@@ -3,7 +3,6 @@ from _setup_logging import SetupLogs
 from _get_files import get_files
 from _get_gestures import get_gestures
 import logging as log
-from pathlib import Path
 from _setup_directories import SetupDirectories
 
 class Combine(SetupDirectories):
