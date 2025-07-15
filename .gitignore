@@ -17,6 +17,7 @@
 **/*.csv
 *.json
 **/*.json
+test.py
 
 # Ignore Python bytecode cache and compiled files
 __pycache__/

@@ -1,7 +1,6 @@
 import logging as log
 from pathlib import Path
 
-
 class SetupLogs:
     def __init__(self, file_type):
         self.file_type = file_type.title()

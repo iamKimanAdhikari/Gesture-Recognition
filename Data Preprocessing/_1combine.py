@@ -1,9 +1,9 @@
 import pandas as pd
 from _setup_logging import SetupLogs
+from _get_files import get_files
 from _get_gestures import get_gestures
 import logging as log
 from pathlib import Path
-import re
 
 class Combine():
     def __init__(self):
@@ -12,15 +12,20 @@ class Combine():
         self.base_path = Path(__file__).parent.parent
         self.csv_dir = self.base_path / "Data" / "Raw_Data" / "csvRaw"
         self.gestures_list = get_gestures(self.csv_dir)
-        print(self.gestures_list)
+        self.files_dict = get_files(self.csv_dir)
        
     def combine(self):
         log.info(f"Combining relevant files from {self.csv_dir}")
+        count = 0
         try:
-            self.csv_files = list(self.csv_dir.glob("*.csv"))
-            count = len(self.csv_files)
-            log.info(f"{count} .csv files found in {self.csv_dir}")
+            for gesture in self.gestures_list:
+                current_gesture = gesture
 
+                for file in self.files_dict[gesture]:
+                    count += 1
+                    print(file)
+
+            print(count)
         except PermissionError as e:
             log.error(f"Insufficient Permission to access the file as {e}")
             raise
@@ -40,7 +45,7 @@ class Combine():
     
 def main():
     obj2 = Combine()
-    # obj2.combine()
+    obj2.combine()
 
 if __name__ == "__main__":
     main()
