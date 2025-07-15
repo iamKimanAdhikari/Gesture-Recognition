@@ -2,37 +2,14 @@ import pandas as pd
 import json
 import logging as log
 from pathlib import Path
-from setup_logging import SetupLogs
+from _setup_logging import SetupLogs
+from _setup_directories import SetupDirectories
 
-class JsontoCsv:
+class JsontoCsv(SetupDirectories):
     def __init__(self):
-        self.base_path = Path(__file__).parent.parent
-
-    def setup_directories(self):
-        try:
-            self.raw_path = self.base_path/"Data"/"Raw_Data"
-            self.json_dir = self.raw_path/"jsonRaw"
-            self.csv_dir = self.raw_path/"csvRaw"
-            self.json_dir.resolve()
-            self.csv_dir.resolve()
-            self.csv_dir.mkdir(parents = True, exist_ok = True)
-            log.info(f"JSON directory: {self.json_dir}")
-            log.info(f"CSV directory: {self.csv_dir}")
-        except PermissionError as e:
-            log.error(f"Insufficient Permission to access the file as {e}")
-            raise
-        except NotADirectoryError as e:
-            log.error(f"A component of the path is a file, but a directory was expected: {e}")
-            raise
-        except IsADirectoryError as e:
-            log.error(f"The path points to a directory, but a file operation was attempted: {e}")
-            raise
-        except FileNotFoundError as e:
-            log.error(f"{self.json_dir} not found as {e}.")
-            raise
-        except Exception as e:
-            log.error(f"Unexpected Error occured as {e}")
-            raise
+        super().__init__()
+        setup = SetupLogs("JSON to CSV")
+        setup.setup_logging()
 
     def convert(self):
         try:
@@ -54,11 +31,11 @@ class JsontoCsv:
                     df = pd.DataFrame(values, columns=parameters)
                     df.insert(0, "timestamps", timestamps)
 
-                    if j.stem == "LeftClick" or "RightClick":
+                    if j.stem in ["LeftClick", "RightClick"]:
                         base_name = f"{j.stem}"
                     else:
-                        gesture, code, _, segment = j.stem.split(".")
-                        base_name = f"{gesture}_{code}_{segment}"
+                        gesture = j.stem.split(".")
+                        base_name = f"{gesture[0]}{gesture[1]}_{gesture[3]}"
                     csv_filename = f"{base_name}_raw.csv"
 
                     output_path = self.csv_dir / csv_filename
@@ -99,10 +76,7 @@ class JsontoCsv:
 
 
 def main():
-    setup = SetupLogs("JSON to CSV")
-    setup.setup_logging()
     j2c = JsontoCsv()
-    j2c.setup_directories()
     j2c.convert()
 
 if __name__ == "__main__":
