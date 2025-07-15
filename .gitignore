@@ -18,6 +18,7 @@
 *.json
 **/*.json
 test.py
+test2.py
 
 # Ignore Python bytecode cache and compiled files
 __pycache__/
