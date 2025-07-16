@@ -6,20 +6,23 @@ import logging as log
 from _setup_directories import SetupDirectories
 
 class Combine(SetupDirectories):
-    def __init__(self):     
+    def __init__(self):         
         super().__init__()
         setup = SetupLogs("Combine")
-        setup.setup_logging()
+        self.logger = setup.setup_logging()
         self.files_dict = get_files()
         self.gestures = get_gestures()
         self.all_dfs = {}
        
     def combine(self):
-        log.info(f"Combining relevant files from {self.csv_dir}")
+        self.logger.info(f"Combining relevant files from {self.csv_dir}")
         try:
-            last_ts = 0
-            segments = []
             for gesture in self.gestures:
+                self.logger.info(f"Processing gesture: {gesture}")
+                
+                # Reset for each gesture
+                last_ts = 0
+                segments = []
                 for i in range(len(self.files_dict[gesture])):
                     df = pd.read_csv(self.files_dict[gesture][i])
                     df["timestamps"] = df["timestamps"] + last_ts
