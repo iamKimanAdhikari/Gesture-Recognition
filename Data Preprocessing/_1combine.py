@@ -2,14 +2,13 @@ import pandas as pd
 from _setup_logging import SetupLogs
 from _get_files import get_files
 from _get_gestures import get_gestures
-import logging as log
 from _setup_directories import SetupDirectories
 
 class Combine(SetupDirectories):
     def __init__(self):         
         super().__init__()
         setup = SetupLogs("Combine")
-        self.logger = setup.setup_logging()
+        self.logger = setup.setup_self.logger()
         self.files_dict = get_files()
         self.gestures = get_gestures()
         self.all_dfs = {}
@@ -34,19 +33,19 @@ class Combine(SetupDirectories):
                 new_name = self.processed_dir/(gesture+"_processed.csv")
                 full_df.to_csv(new_name, index = False)
         except PermissionError as e:
-            log.error(f"Insufficient Permission to access the file as {e}")
+            self.logger.error(f"Insufficient Permission to access the file as {e}")
             raise PermissionError(f"Insufficient Permission to access the file as {e}")
         except NotADirectoryError as e:
-            log.error(f"A component of the path is a file, but a directory was expected: {e}")
+            self.logger.error(f"A component of the path is a file, but a directory was expected: {e}")
             raise NotADirectoryError(f"A component of the path is a file, but a directory was expected: {e}")
         except IsADirectoryError as e:
-            log.error(f"The path points to a directory, but a file operation was attempted: {e}")
+            self.logger.error(f"The path points to a directory, but a file operation was attempted: {e}")
             raise IsADirectoryError(f"The path points to a directory, but a file operation was attempted: {e}")
         except FileNotFoundError as e:
-            log.error(f"{self.csv_dir} not found as {e}.")
+            self.logger.error(f"{self.csv_dir} not found as {e}.")
             raise FileNotFoundError(f"{self.csv_dir} not found as {e}.")
         except Exception as e:
-            log.error(f"Unexpected Error occured as {e}")
+            self.logger.error(f"Unexpected Error occured as {e}")
             raise Exception(f"Unexpected Error occured as {e}")
         
     
