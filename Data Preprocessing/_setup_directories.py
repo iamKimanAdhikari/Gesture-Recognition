@@ -8,16 +8,21 @@ class SetupDirectories:
 
             self.raw_dir = self.data_dir / "Raw_Data"
             self.json_dir = self.raw_dir/ "jsonRaw"
-            self.csv_dir = self.raw_dir/ "csvRaw"
+            self.raw_csv_dir = self.raw_dir/ "csvRaw"
 
             self.processed_dir = self.data_dir / "Processed_Data"
             self.cleaned_dir = self.data_dir / "Cleaned_Data"
 
+            self.raw_csv_files = sorted(
+            self.raw_csv_dir.glob("*.csv"),
+            key=lambda p: int(p.stem.split("_s")[1].split("_")[0]) if "_s" in p.stem else 0
+            )
+
             self.json_dir.resolve()
-            self.csv_dir.resolve()            
+            self.raw_csv_dir.resolve()            
             self.processed_dir.resolve()            
             
-            for dir in [self.csv_dir,self.processed_dir, self.cleaned_dir]:
+            for dir in [self.raw_csv_dir,self.processed_dir, self.cleaned_dir]:
                 dir.mkdir(parents=True, exist_ok=True)
 
         except PermissionError as e:

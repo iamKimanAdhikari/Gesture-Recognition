@@ -17,7 +17,6 @@ class JsontoCsv(SetupDirectories):
 
             for j in self.json_files:
                 try:
-                    self.logger.info(f"Processing {j.name} file currently.")
                     with open(j, "r") as file:
                         data = json.load(file)
 
@@ -36,9 +35,9 @@ class JsontoCsv(SetupDirectories):
                         base_name = f"{gesture[0]}{gesture[1]}_{gesture[3]}"
                     csv_filename = f"{base_name}_raw.csv"
 
-                    output_path = self.csv_dir / csv_filename
+                    output_path = self.raw_csv_dir / csv_filename
 
-                    df.to_csv(output_path, index=False) 
+                    df.to_csv(output_path, index=False)
                     
                 except KeyError as e:
                     self.logger.error(f"Invalid key in file {j}: {e}")
@@ -59,8 +58,8 @@ class JsontoCsv(SetupDirectories):
                     self.logger.error(f"An unexpected error occurred with file {j}: {e}")
                     raise Exception(f"An unexpected error occurred with file {j}: {e}")
             
-            self.logger.info(f"Resulting csv files successfully saved to {self.csv_dir}")
-
+            self.logger.info(f"Resulting csv files successfully saved to {self.raw_csv_dir}")
+            self.logger.info(f"{len(list(self.raw_csv_dir.glob("*.csv")))} successfully converted.")
         except FileNotFoundError:
             self.logger.error("The directory doesn't exist.")
             raise FileNotFoundError("The directory doesn't exist.")
@@ -71,8 +70,8 @@ class JsontoCsv(SetupDirectories):
             self.logger.error("The json file is not in the correct format.")
             raise json.JSONDecodeError("The json file is not in the correct format.")
         except Exception as e:
-            self.logger.error(f"An unexpected error occurred: {e}")
-            raise Exception (f"An unexpected error occurred: {e}")
+            self.logger.error(f"{e}")
+            raise Exception (f"{e}")
 
 
 def main():
