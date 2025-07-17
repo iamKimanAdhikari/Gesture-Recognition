@@ -12,10 +12,14 @@ class CleanData(Combine):
         self.logger = setup.setup_logging()
 
     def remove_outliers(self):
-        ...
+        for gesture in self.sorted_gestures:
+            print(gesture)
+            df = self.all_dfs[gesture]
+            print(df.head())
 
 def main():
-    CleanData()
+    clean = CleanData()
+    clean.remove_outliers()
 
 if __name__ == "__main__":
     main()
