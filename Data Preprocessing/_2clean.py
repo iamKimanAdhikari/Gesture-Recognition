@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 from sklearn.impute import SimpleImputer
 from scipy.signal import butter, filtfilt
-from pathlib import Path
 import pickle
 
 class CleanData(Combine):
