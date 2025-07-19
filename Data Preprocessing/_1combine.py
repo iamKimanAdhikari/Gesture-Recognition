@@ -2,7 +2,6 @@ import pandas as pd
 from _setup_logging import SetupLogs
 from _get_files import GetFiles
 from collections import defaultdict
-from pathlib import Path
 import pickle
 
 class Combine(GetFiles):

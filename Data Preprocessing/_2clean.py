@@ -13,7 +13,6 @@ class CleanData(Combine):
         self.logger = setup.setup_logging()
         self.cleaned_dfs = {}
 
-        # Attempt to load cleaned data from cache
         self.cache_path = self.cleaned_dir / "_cached_cleaned_dfs.pkl"
         if self.cache_path.exists():
             try:

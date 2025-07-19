@@ -12,6 +12,7 @@ class SetupDirectories:
 
             self.processed_dir = self.data_dir / "Processed_Data"
             self.cleaned_dir = self.data_dir / "Cleaned_Data"
+            self.segmented_dir = self.data_dir / "Segmented_Data"
 
             self.raw_csv_files = sorted(
             self.raw_csv_dir.glob("*.csv"),
