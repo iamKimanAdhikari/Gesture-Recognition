@@ -13,7 +13,5 @@ class GetGestures(SetupDirectories):
 def main(): 
     GetGestures()
 
-
-
 if __name__ == "__main__":
     main()
