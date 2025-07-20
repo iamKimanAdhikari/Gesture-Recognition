@@ -23,7 +23,7 @@ class SetupDirectories:
             self.raw_csv_dir.resolve()            
             self.processed_dir.resolve()            
             
-            for dir in [self.raw_csv_dir,self.processed_dir, self.cleaned_dir]:
+            for dir in [self.raw_csv_dir,self.processed_dir, self.cleaned_dir, self.segmented_dir]:
                 dir.mkdir(parents=True, exist_ok=True)
 
         except PermissionError as e:

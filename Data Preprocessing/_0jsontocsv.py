@@ -12,8 +12,7 @@ class JsontoCsv(SetupDirectories):
     def convert(self):
         try:
             self.json_files = list(self.json_dir.glob("*.json"))
-            count = len(self.json_files)
-            self.logger.info(f"{count} .json files found in {self.json_dir}")
+            self.logger.info(f"{len(self.json_files)} .json files found in {self.json_dir}")
 
             for j in self.json_files:
                 try:
@@ -23,55 +22,54 @@ class JsontoCsv(SetupDirectories):
                     interval_ms = data["payload"]["interval_ms"]
                     values = data["payload"]["values"]
                     parameters = [sensor["name"] for sensor in data["payload"]["sensors"]]
-                    timestamps = [i*interval_ms for i in range(len(values))]
+                    timestamps = [i * interval_ms for i in range(len(values))]
 
+                    # Build dataframe
                     df = pd.DataFrame(values, columns=parameters)
                     df.insert(0, "timestamps", timestamps)
 
+                    # Only for LeftClick and RightClick, replace Roll, Pitch, Yaw with null AccX, AccY, AccZ
                     if j.stem in ["LeftClick", "RightClick"]:
-                        base_name = f"{j.stem}"
-                    else:
-                        gesture = j.stem.split(".")
-                        base_name = f"{gesture[0]}{gesture[1]}_{gesture[3]}"
-                    csv_filename = f"{base_name}_raw.csv"
+                        mapping = {"Roll": "AccX", "Pitch": "AccY", "Yaw": "AccZ"}
+                        for orig, new_col in mapping.items():
+                            if orig in df.columns:
+                                df.drop(columns=[orig], inplace=True)
+                            df[new_col] = pd.NA
 
+                    # Determine CSV filename
+                    if j.stem in ["LeftClick", "RightClick"]:
+                        base_name = j.stem
+                    else:
+                        parts = j.stem.split('.')
+                        base_name = f"{parts[0]}{parts[1]}_{parts[3]}"
+                    csv_filename = f"{base_name}_raw.csv"
                     output_path = self.raw_csv_dir / csv_filename
 
                     df.to_csv(output_path, index=False)
-                    
-                except KeyError as e:
-                    self.logger.error(f"Invalid key in file {j}: {e}")
-                    raise KeyError(f"Invalid key in file {j}: {e}")
-                except ValueError as e:
-                    self.logger.error(f"Invalid value in the file {j}: {e}")
-                    raise ValueError(f"Invalid value in the file {j}: {e}")
-                except TypeError as e:
-                    self.logger.error(f"Type error in file {j}, check data structures: {e}")
-                    raise TypeError(f"Type error in file {j}, check data structures: {e}")
-                except IndexError as e:
-                    self.logger.error(f"Index error in file {j}, possibly empty lists: {e}")
-                    raise IndexError(f"Index error in file {j}, possibly empty lists: {e}")
-                except IOError as e:
-                    self.logger.error(f"IO error while processing file {j}: {e}")
-                    raise IOError(f"IO error while processing file {j}: {e}")
+
+                except (KeyError, ValueError, TypeError, IndexError, IOError) as e:
+                    self.logger.error(f"Error processing {j}: {e}")
+                    raise
                 except Exception as e:
-                    self.logger.error(f"An unexpected error occurred with file {j}: {e}")
-                    raise Exception(f"An unexpected error occurred with file {j}: {e}")
-            
-            self.logger.info(f"Resulting csv files successfully saved to {self.raw_csv_dir}")
-            self.logger.info(f"{len(list(self.raw_csv_dir.glob("*.csv")))} successfully converted.")
+                    self.logger.error(f"Unexpected error with {j}: {e}")
+                    raise
+
+            self.logger.info(f"CSV files saved to {self.raw_csv_dir}")
+            total = len(list(self.raw_csv_dir.glob("*.csv")))
+            self.logger.info(f"{total} files successfully converted.")
+
         except FileNotFoundError:
-            self.logger.error("The directory doesn't exist.")
-            raise FileNotFoundError("The directory doesn't exist.")
+            self.logger.error("Directory not found.")
+            raise
         except pd.errors.EmptyDataError:
-            self.logger.error("The file is empty.")
-            raise pd.errors.EmptyDataError("The file is empty.")
+            self.logger.error("Empty file encountered.")
+            raise
         except json.JSONDecodeError:
-            self.logger.error("The json file is not in the correct format.")
-            raise json.JSONDecodeError("The json file is not in the correct format.")
+            self.logger.error("Malformed JSON file.")
+            raise
         except Exception as e:
-            self.logger.error(f"{e}")
-            raise Exception (f"{e}")
+            self.logger.error(str(e))
+            raise
 
 
 def main():
