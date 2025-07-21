@@ -40,12 +40,10 @@ class Combine(JsontoCsv):
 
                 full_df = pd.concat(segments, ignore_index=True)
                 self.all_dfs[gesture] = full_df
-                # Save individual gesture if desired:
                 output_path = self.processed_dir / f"{gesture}_processed.csv"
                 full_df.to_csv(output_path, index=False)
                 master_list.append(full_df)
 
-            # Create and save master file without timestamps
             self.master_df = pd.concat(master_list, ignore_index=True)
             if "timestamps" in self.master_df.columns:
                 self.master_df = self.master_df.drop(columns=["timestamps"])
