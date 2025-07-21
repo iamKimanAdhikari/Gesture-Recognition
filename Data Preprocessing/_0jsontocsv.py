@@ -3,9 +3,9 @@ import json
 import numpy as np
 import pickle
 from _setup_logging import SetupLogs
-from _setup_directories import SetupDirectories
+from _get_files import GetFiles
 
-class JsontoCsv(SetupDirectories):
+class JsontoCsv(GetFiles):
     def __init__(self):
         super().__init__()
         setup = SetupLogs("JSON to CSV")
@@ -52,9 +52,11 @@ class JsontoCsv(SetupDirectories):
                             if orig in df.columns:
                                 df.drop(columns=[orig], inplace=True)
                         base_name = stem
+                        df.insert(df.shape[1],"Label",base_name)
                     else:
                         parts = stem.split('.')
                         base_name = f"{parts[0]}_{parts[1]}_{parts[3]}"
+                        df.insert(df.shape[1],"Label",parts[0])
                     
                     csv_filename = f"{base_name}_raw.csv"
                     output_path = self.raw_csv_dir / csv_filename

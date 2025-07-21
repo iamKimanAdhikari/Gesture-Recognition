@@ -1,11 +1,11 @@
-from _setup_directories import SetupDirectories
+from _1combine import Combine
 from _setup_logging import SetupLogs
 import pandas as pd
 import numpy as np
 from scipy.signal import butter, filtfilt
 import pickle
 
-class CleanData(SetupDirectories):
+class CleanData(Combine):
     def __init__(self, combined_data=None):
         super().__init__()
         setup = SetupLogs("Clean Data")
@@ -29,11 +29,8 @@ class CleanData(SetupDirectories):
         return filtfilt(b, a, data)
 
     def check_nulls(self, df, gesture):
-        """Check for null values with special handling for click gestures"""
-        # Define columns to skip for click gestures
         skip_columns = ["AccX", "AccY", "AccZ"] if gesture in ["LeftClick", "RightClick"] else []
         
-        # Check nulls in all columns except skipped ones
         null_counts = df.drop(columns=skip_columns, errors="ignore").isnull().sum()
         total_nulls = null_counts.sum()
         

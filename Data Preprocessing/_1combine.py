@@ -1,11 +1,11 @@
 import pandas as pd
 from _setup_logging import SetupLogs
-from _get_files import GetFiles
+from _0jsontocsv import JsontoCsv
 from collections import defaultdict
 import pickle
 import os
 
-class Combine(GetFiles):
+class Combine(JsontoCsv):
     def __init__(self, force_recombine: bool = False):
         super().__init__()
         setup = SetupLogs("Combine")
@@ -13,14 +13,14 @@ class Combine(GetFiles):
         self.all_dfs = defaultdict(pd.DataFrame)
         self.force_recombine = force_recombine
         self.cache_path = self.processed_dir / "_cached_combined_dfs.pkl"
-        
+
         if not self.force_recombine and self.cache_path.exists():
             try:
                 with open(self.cache_path, "rb") as f:
                     self.all_dfs = pickle.load(f)
                 self.logger.info("Loaded cached combined DataFrames from disk.")
             except Exception as e:
-                self.logger.warning(f"Failed to load cached combined DataFrames: {e}")
+                self.logger.warning(f"Failed to load cache: {e}")
                 self.combine()
         else:
             self.combine()
@@ -28,6 +28,7 @@ class Combine(GetFiles):
     def combine(self):
         self.logger.info(f"Combining relevant files from {self.raw_csv_dir}")
         try:
+            master_list = []
             for gesture in self.sorted_gestures:
                 last_ts = 0
                 segments = []
@@ -39,8 +40,18 @@ class Combine(GetFiles):
 
                 full_df = pd.concat(segments, ignore_index=True)
                 self.all_dfs[gesture] = full_df
+                # Save individual gesture if desired:
                 output_path = self.processed_dir / f"{gesture}_processed.csv"
                 full_df.to_csv(output_path, index=False)
+                master_list.append(full_df)
+
+            # Create and save master file without timestamps
+            self.master_df = pd.concat(master_list, ignore_index=True)
+            if "timestamps" in self.master_df.columns:
+                self.master_df = self.master_df.drop(columns=["timestamps"])
+            all_path = self.processed_dir / "allgestures_processed.csv"
+            self.master_df.to_csv(all_path, index=False)
+            self.logger.info(f"Saved all gestures into {all_path}")
 
             # Save cache
             try:
@@ -48,10 +59,10 @@ class Combine(GetFiles):
                     pickle.dump(self.all_dfs, f)
                 self.logger.info("Cached combined DataFrames to disk.")
             except Exception as e:
-                self.logger.warning(f"Failed to save combined DataFrame cache: {e}")
+                self.logger.warning(f"Failed to save cache: {e}")
 
             self.logger.info(
-                f"Successfully combined {len(self.raw_csv_files)} CSV files into {len(self.all_dfs)} processed files.")
+                f"Successfully combined {len(self.raw_csv_files)} CSVs into {len(self.all_dfs)} gesture DataFrames and one master file.")
             return self.all_dfs
 
         except Exception as e:
