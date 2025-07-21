@@ -15,9 +15,9 @@ class SegmentandLabelData(CleanData):
             try:
                 with open(self.cache_path, "rb") as f:
                     self.segmented_dfs = pickle.load(f)
-                    self.logger.info("Loaded cached cleaned DataFrames from disk.")
+                    self.logger.info("Loaded cached segmented DataFrames from disk.")
             except Exception as e:
-                self.logger.warning(f"Failed to load cached cleaned DataFrames: {e}")
+                self.logger.warning(f"Failed to load cached segmented DataFrames: {e}")
                 
     def segment_data(self):
         ...

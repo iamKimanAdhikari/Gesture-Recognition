@@ -47,7 +47,7 @@ class JsontoCsv(SetupDirectories):
                     if stem in ["LeftClick", "RightClick"]:
                         mapping = {"Roll": "AccX", "Pitch": "AccY", "Yaw": "AccZ"}
                         for new_col in mapping.values():
-                            df[new_col] = np.nan
+                            df[new_col] = 0
                         for orig in mapping.keys():
                             if orig in df.columns:
                                 df.drop(columns=[orig], inplace=True)
