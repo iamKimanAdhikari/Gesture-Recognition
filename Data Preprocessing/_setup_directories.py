@@ -13,6 +13,8 @@ class SetupDirectories:
             self.processed_dir = self.data_dir / "Processed_Data"
             self.cleaned_dir = self.data_dir / "Cleaned_Data"
             self.segmented_dir = self.data_dir / "Segmented_Data"
+            self.splitted_dir = self.data_dir / "Splitted_Data"
+            self.normalized_dir = self.data_dir / "Normalized_Data"
 
             self.raw_csv_files = sorted(
             self.raw_csv_dir.glob("*.csv"),
@@ -23,7 +25,7 @@ class SetupDirectories:
             self.raw_csv_dir.resolve()            
             self.processed_dir.resolve()            
             
-            for dir in [self.raw_csv_dir,self.processed_dir, self.cleaned_dir, self.segmented_dir]:
+            for dir in [self.raw_csv_dir,self.processed_dir, self.cleaned_dir, self.splitted_dir, self.normalized_dir]:
                 dir.mkdir(parents=True, exist_ok=True)
 
         except PermissionError as e:

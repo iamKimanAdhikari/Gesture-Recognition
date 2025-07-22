@@ -1,105 +1,88 @@
 from _1combine import Combine
 from _setup_logging import SetupLogs
 import pandas as pd
-import numpy as np
 from scipy.signal import butter, filtfilt
 import pickle
+import numpy as np
 
 class CleanData(Combine):
-    def __init__(self, combined_data=None):
+    def __init__(self):
         super().__init__()
         setup = SetupLogs("Clean Data")
         self.logger = setup.setup_logging()
-        self.cleaned_dfs = {}
-        self.combined_data = combined_data
-        self.cache_path = self.cleaned_dir / "_cached_cleaned_dfs.pkl"
+        self.cache_path = self.cleaned_dir / "_cached_cleaned_df.pkl"
         
         if self.cache_path.exists():
             try:
                 with open(self.cache_path, "rb") as f:
-                    self.cleaned_dfs = pickle.load(f)
-                self.logger.info("Loaded cached cleaned DataFrames from disk.")
+                    self.cleaned_df = pickle.load(f)
+                self.logger.info("Loaded cached cleaned DataFrame from disk.")
             except Exception as e:
                 self.logger.warning(f"Failed to load cache: {e}")
-
+        else:
+            self.clean_data()
+    
     def butterworth_low_pass_filter(self, data, cutoff, fs, order):
         nyquist = 0.5 * fs
         norm_cutoff = cutoff / nyquist
         b, a = butter(order, norm_cutoff, btype="low", analog=False)
         return filtfilt(b, a, data)
+    
+    def impute_missing_values(self, df):
+        """Impute missing values using column median strategy"""
+        self.logger.info("Imputing missing values using median strategy")
+        for col in df.columns:
+            if df[col].isna().any():
+                null_count = df[col].isna().sum()
+                median_val = df[col].median()
+                df[col].fillna(median_val, inplace=True)
+                self.logger.info(f"Imputed {null_count} missing values in '{col}' with median: {median_val:.4f}")
+        return df
 
-    def check_nulls(self, df, gesture):
-        skip_columns = ["AccX", "AccY", "AccZ"] if gesture in ["LeftClick", "RightClick"] else []
-        
-        null_counts = df.drop(columns=skip_columns, errors="ignore").isnull().sum()
-        total_nulls = null_counts.sum()
-        
-        if total_nulls > 0:
-            self.logger.warning(f"Found {total_nulls} null values in {gesture}:")
-            for col, count in null_counts.items():
-                if count > 0:
-                    self.logger.warning(f"  - Column '{col}': {count} nulls")
-            return True
-        return False
-
-    def remove_outliers(self, cutoff=10, fs=100, order=5):
+    def clean_data(self, cutoff=10, fs=100, order=5):
+        self.logger.info("Cleaning combined dataset")
         try:
-            if self.combined_data is None:
-                self.logger.error("No combined data provided!")
-                return
-
-            for gesture, df in self.combined_data.items():
-                if gesture in self.cleaned_dfs:
-                    self.logger.info(f"Skipping {gesture}, already cleaned.")
-                    continue
-
-                self.logger.info(f"Cleaning gesture: {gesture}")
-                
-                # Check for null values before processing
-                has_nulls = self.check_nulls(df, gesture)
-                if has_nulls:
-                    self.logger.warning(f"Null values detected in {gesture} before cleaning")
-                
-                # Copy DataFrame to preserve original
-                cleaned = df.copy()
-
-                # Apply low-pass filter only to specified columns
-                filter_columns = ["Index", "Middle", "Ring"]
-                for col in filter_columns:
-                    if col in cleaned.columns:
-                        try:
-                            # Skip if column has nulls
-                            if cleaned[col].isnull().any():
-                                self.logger.warning(f"Skipping filter for {col} due to null values")
-                                continue
-                                
-                            cleaned[col] = self.butterworth_low_pass_filter(
-                                cleaned[col], cutoff, fs, order
-                            )
-                        except Exception as e:
-                            self.logger.error(f"Error filtering {col}: {e}")
-
-                # Check for null values after processing
-                has_nulls_after = self.check_nulls(cleaned, gesture)
-                if has_nulls_after:
-                    self.logger.warning(f"Null values detected in {gesture} after cleaning")
-
-                self.cleaned_dfs[gesture] = cleaned
-                out_path = self.cleaned_dir / f"{gesture}_cleaned.csv"
-                cleaned.to_csv(out_path, index=False)
-                self.logger.info(f"Saved cleaned data for {gesture} to {out_path}")
-
+            # Create a copy of combined data
+            self.cleaned_df = self.combined_df.copy()
+            
+            # 1. Impute missing values
+            self.cleaned_df = self.impute_missing_values(self.cleaned_df)
+            
+            # 2. Apply low-pass filter to finger columns
+            filter_columns = ["Index", "Middle", "Ring"]
+            for col in filter_columns:
+                if col in self.cleaned_df.columns:
+                    try:
+                        self.cleaned_df[col] = self.butterworth_low_pass_filter(
+                            self.cleaned_df[col], cutoff, fs, order
+                        )
+                        self.logger.info(f"Applied low-pass filter to {col}")
+                    except Exception as e:
+                        self.logger.error(f"Error filtering {col}: {e}")
+            
+            # 3. Final null check
+            null_counts = self.cleaned_df.isnull().sum()
+            total_nulls = null_counts.sum()
+            if total_nulls > 0:
+                self.logger.warning(f"Found {total_nulls} null values after cleaning")
+                for col, count in null_counts.items():
+                    if count > 0:
+                        self.logger.warning(f"  - Column '{col}': {count} nulls")
+            else:
+                self.logger.info("No null values found after cleaning")
+            
+            # Save cleaned data
+            out_path = self.cleaned_dir / "allgestures_cleaned.csv"
+            self.cleaned_df.to_csv(out_path, index=False)
+            self.logger.info(f"Saved cleaned data to {out_path}")
+            
             # Save cache
             with open(self.cache_path, 'wb') as f:
-                pickle.dump(self.cleaned_dfs, f)
-            self.logger.info("Cached cleaned DataFrames.")
-
+                pickle.dump(self.cleaned_df, f)
+            self.logger.info("Cached cleaned DataFrame")
+            
+            return self.cleaned_df
+            
         except Exception as e:
-            self.logger.error(f"Error in remove_outliers: {e}")
+            self.logger.error(f"Error in cleaning: {e}")
             raise
-
-if __name__ == "__main__":
-    from _1combine import Combine
-    combiner = Combine()
-    cleaner = CleanData(combined_data=combiner.all_dfs)
-    cleaner.remove_outliers()

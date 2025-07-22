@@ -1,23 +1,25 @@
 from _0jsontocsv import JsontoCsv
 from _1combine import Combine
 from _2clean import CleanData
+from _3split import SplitData
 
 class DataPreprocessing:
     def __init__(self):
-        # Only initialize JSON converter first
-        self.jsontocsv = JsontoCsv()
+        pass
         
     def run_all(self):
         # Step 1: Convert JSON to CSV
-        self.jsontocsv.convert()
+        json_converter = JsontoCsv()
+        json_converter.convert()
         
-        # Step 2: Initialize and run combiner AFTER CSV files exist
-        self.combiner = Combine()
-        self.combiner.combine()
+        # Step 2: Combine CSVs
+        combiner = Combine()
         
-        # Step 3: Initialize and run cleaner with combined data
-        self.cleaner = CleanData(combined_data=self.combiner.all_dfs)
-        self.cleaner.remove_outliers()
+        # Step 3: Clean data
+        cleaner = CleanData()
+        
+        # Step 4: Split data
+        splitter = SplitData()
 
 def main():
     datapreprocessing = DataPreprocessing()

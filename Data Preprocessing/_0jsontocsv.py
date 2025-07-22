@@ -45,9 +45,10 @@ class JsontoCsv(GetFiles):
                     df.insert(0, "timestamps", timestamps)
 
                     if stem in ["LeftClick", "RightClick"]:
+                        # Set accelerometer columns to NaN instead of 0
                         mapping = {"Roll": "AccX", "Pitch": "AccY", "Yaw": "AccZ"}
                         for new_col in mapping.values():
-                            df[new_col] = 0
+                            df[new_col] = np.nan  # Use NaN instead of 0
                         for orig in mapping.keys():
                             if orig in df.columns:
                                 df.drop(columns=[orig], inplace=True)
@@ -94,11 +95,3 @@ class JsontoCsv(GetFiles):
         except Exception as e:
             self.logger.error(str(e))
             raise
-
-
-def main():
-    j2c = JsontoCsv()
-    j2c.convert()
-
-if __name__ == "__main__":
-    main()
