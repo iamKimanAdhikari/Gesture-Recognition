@@ -11,6 +11,8 @@
 # Do not track these folders
 /Data/
 /Logs/
+/Plots/
+/WindowsPowershell/
 
 # Explicitly ignore data files everywhere
 *.csv
@@ -20,7 +22,6 @@
 test.py
 test2.py
 *.pkl
-*.png
 *.h5
 *.tflite
 
@@ -30,7 +31,7 @@ __pycache__/
 
 # Allow .gitignore itself
 !.gitignore
-/WindowsPowershell/
+
 
 # Ignore system files
 .DS_Store
