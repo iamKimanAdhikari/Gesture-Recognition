@@ -1,6 +1,5 @@
-from _1combine import Combine
-from _setup_logging import SetupLogs
-import pandas as pd
+from ._setup_logging import SetupLogs  
+from ._1combine import Combine        
 from scipy.signal import butter, filtfilt
 import pickle
 import numpy as np

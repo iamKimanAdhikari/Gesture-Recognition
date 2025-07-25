@@ -1,4 +1,4 @@
-from _3split import SplitData
+from . import SplitData
 import pandas as pd
 
 class ExtractCsv:

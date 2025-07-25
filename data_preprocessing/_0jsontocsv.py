@@ -2,8 +2,8 @@ import pandas as pd
 import json
 import numpy as np
 import pickle
-from _setup_logging import SetupLogs
-from _get_files import GetFiles
+from ._setup_logging import SetupLogs  
+from ._get_files import GetFiles 
 
 class JsontoCsv(GetFiles):
     def __init__(self):

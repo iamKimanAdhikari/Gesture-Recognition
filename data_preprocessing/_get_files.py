@@ -1,4 +1,4 @@
-from _get_gestures import GetGestures
+from ._get_gestures import GetGestures  
 from collections import defaultdict
 
 class GetFiles(GetGestures):

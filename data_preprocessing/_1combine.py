@@ -1,6 +1,6 @@
 import pandas as pd
-from _setup_logging import SetupLogs
-from _0jsontocsv import JsontoCsv
+from ._setup_logging import SetupLogs  
+from ._0jsontocsv import JsontoCsv 
 import pickle
 
 class Combine(JsontoCsv):

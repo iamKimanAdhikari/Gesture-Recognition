@@ -1,5 +1,5 @@
 from pathlib import Path
-from _setup_directories import SetupDirectories
+from ._setup_directories import SetupDirectories  
 
 class GetGestures(SetupDirectories):
     def __init__(self):

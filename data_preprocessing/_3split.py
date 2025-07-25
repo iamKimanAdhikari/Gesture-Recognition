@@ -1,5 +1,5 @@
-from _2clean import CleanData
-from _setup_logging import SetupLogs
+from ._setup_logging import SetupLogs  
+from ._2clean import CleanData        
 import pandas as pd
 import pickle
 from sklearn.model_selection import train_test_split
@@ -25,7 +25,6 @@ class SplitData(CleanData):
     def split_data(self):
         self.logger.info("Splitting data into train/val/test sets")
         try:
-            # Stratified split (70% train, 15% val, 15% test)
             train, test_val = train_test_split(
                 self.cleaned_df,
                 test_size=0.3,
@@ -40,9 +39,9 @@ class SplitData(CleanData):
             )
             
             # Save datasets
-            train_path = self.segmented_dir / "train.csv"
-            val_path = self.segmented_dir / "val.csv"
-            test_path = self.segmented_dir / "test.csv"
+            train_path = self.splitted_dir / "train.csv"
+            val_path = self.splitted_dir / "val.csv"
+            test_path = self.splitted_dir / "test.csv"
             
             train.to_csv(train_path, index=False)
             val.to_csv(val_path, index=False)
@@ -59,9 +58,8 @@ class SplitData(CleanData):
             self.logger.info(f"Training set size: {len(train)} samples")
             self.logger.info(f"Validation set size: {len(val)} samples")
             self.logger.info(f"Testing set size: {len(test)} samples")
-            self.logger.info("Data segmentation completed successfully")
+            self.logger.info("Data splitting completed successfully")
             
-            return train, val, test
             
         except Exception as e:
             self.logger.error(f"Error during segmentation: {e}")
