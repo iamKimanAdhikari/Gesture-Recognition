@@ -24,7 +24,8 @@ test2.py
 *.pkl
 *.h5
 *.tflite
-
+*.png
+*.txt
 # Ignore Python bytecode cache and compiled files
 __pycache__/
 *.py[cod]

@@ -23,11 +23,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from data_preprocessing._setup_logging import SetupLogs
-from tcn_model import build_tcn_model  # assumes tcn_model.py is in the same folder
+from .tcn_model import build_tcn_model  # assumes tcn_model.py is in same folder
 
 class TrainTCNModel:
     def __init__(self, sequence_length=10):
-        self.base_path       = Path(__file__).parent
+        self.base_path       = Path(__file__).parent.parent
         self.data_path       = self.base_path / "Data"
         self.model_path      = self.base_path / "Model";      self.model_path.mkdir(exist_ok=True)
         self.plots_path      = self.base_path / "Plots";      self.plots_path.mkdir(exist_ok=True)
@@ -62,12 +62,65 @@ class TrainTCNModel:
         for layer in model.layers:
             rows.append({
                 'Layer': f"{layer.name} ({layer.__class__.__name__})",
-                'Output Shape': layer.output_shape,
+                'Output Shape': tuple(layer.output.shape),
                 'Params': layer.count_params()
             })
         df = pd.DataFrame(rows)
         print("\n=== Model Architecture ===")
         print(df.to_string(index=False))
+
+    def plot_training_curves(self, history):
+        """Plot training and validation loss/accuracy curves"""
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+        
+        # Loss curves
+        epochs = range(1, len(history.history['loss']) + 1)
+        ax1.plot(epochs, history.history['loss'], 'b-', label='Training Loss', linewidth=2)
+        ax1.plot(epochs, history.history['val_loss'], 'r-', label='Validation Loss', linewidth=2)
+        ax1.set_title('Model Loss', fontsize=14, fontweight='bold')
+        ax1.set_xlabel('Epoch')
+        ax1.set_ylabel('Loss')
+        ax1.legend()
+        ax1.grid(True, alpha=0.3)
+        
+        # Accuracy curves
+        ax2.plot(epochs, history.history['accuracy'], 'b-', label='Training Accuracy', linewidth=2)
+        ax2.plot(epochs, history.history['val_accuracy'], 'r-', label='Validation Accuracy', linewidth=2)
+        ax2.set_title('Model Accuracy', fontsize=14, fontweight='bold')
+        ax2.set_xlabel('Epoch')
+        ax2.set_ylabel('Accuracy')
+        ax2.legend()
+        ax2.grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        plt.savefig(self.plots_path / 'training_curves.png', dpi=300, bbox_inches='tight')
+        plt.close()
+        
+        # Save training history to CSV for further analysis
+        history_df = pd.DataFrame({
+            'epoch': epochs,
+            'train_loss': history.history['loss'],
+            'val_loss': history.history['val_loss'],
+            'train_accuracy': history.history['accuracy'],
+            'val_accuracy': history.history['val_accuracy']
+        })
+        history_df.to_csv(self.plots_path / 'training_history.csv', index=False)
+        
+        # Print training summary
+        final_epoch = len(epochs)
+        print(f"\n=== Training Summary ===")
+        print(f"Total Epochs: {final_epoch}")
+        print(f"Final Training Loss: {history.history['loss'][-1]:.4f}")
+        print(f"Final Validation Loss: {history.history['val_loss'][-1]:.4f}")
+        print(f"Final Training Accuracy: {history.history['accuracy'][-1]:.4f}")
+        print(f"Final Validation Accuracy: {history.history['val_accuracy'][-1]:.4f}")
+        
+        # Check for overfitting
+        best_val_loss_epoch = np.argmin(history.history['val_loss']) + 1
+        if final_epoch - best_val_loss_epoch > 5:
+            print(f"⚠️  Potential overfitting detected: Best validation loss at epoch {best_val_loss_epoch}")
+        
+        self.logger.info(f"Training curves saved to {self.plots_path / 'training_curves.png'}")
 
     def train_and_evaluate(self):
         t0 = time.time()
@@ -107,6 +160,9 @@ class TrainTCNModel:
             epochs=100, batch_size=32,
             callbacks=cbs, verbose=1
         )
+
+        # Plot training curves
+        self.plot_training_curves(hist)
 
         # Capture final losses & accuracies
         tr_acc, tr_loss = hist.history['accuracy'][-1], hist.history['loss'][-1]
@@ -160,7 +216,7 @@ class TrainTCNModel:
         plt.savefig(self.plots_path / 'confusion_matrix.png')
         plt.close()
 
-        # ROC curves
+        # Generate ROC curves
         self.plot_roc_curve(y_test, y_prob, le)
 
     def plot_roc_curve(self, y_test, y_prob, le):
@@ -178,28 +234,24 @@ class TrainTCNModel:
         # Macro-average
         all_fpr = np.unique(np.concatenate([fpr[i] for i in range(n)]))
         mean_tpr = np.zeros_like(all_fpr)
-        for i in range(n):
-            mean_tpr += np.interp(all_fpr, fpr[i], tpr[i])
+        for i in range(n): mean_tpr += np.interp(all_fpr, fpr[i], tpr[i])
         mean_tpr /= n
         fpr['macro'], tpr['macro'] = all_fpr, mean_tpr
         roc_auc['macro'] = auc(all_fpr, mean_tpr)
 
         # Plot
         plt.figure(figsize=(10,8))
-        plt.plot(fpr['micro'], tpr['micro'],
-                 linestyle=':', linewidth=4,
-                 label=f'Micro‑avg (AUC = {roc_auc["micro"]:.2f})')
-        plt.plot(fpr['macro'], tpr['macro'],
-                 linestyle='--', linewidth=4,
-                 label=f'Macro‑avg (AUC = {roc_auc["macro"]:.2f})')
+        plt.plot(fpr['micro'], tpr['micro'], linestyle=':', linewidth=4,
+                 label=f"Micro‑avg (AUC = {roc_auc['micro']:.2f})")
+        plt.plot(fpr['macro'], tpr['macro'], linestyle='--', linewidth=4,
+                 label=f"Macro‑avg (AUC = {roc_auc['macro']:.2f})")
         colors = plt.cm.rainbow(np.linspace(0,1,n))
         for i, c in zip(range(n), colors):
             plt.plot(fpr[i], tpr[i], lw=2,
-                     label=f'{le.classes_[i]} (AUC = {roc_auc[i]:.2f})')
+                     label=f"{le.classes_[i]} (AUC = {roc_auc[i]:.2f})")
         plt.plot([0,1],[0,1],'k--', lw=2)
         plt.xlim(0,1); plt.ylim(0,1.05)
-        plt.xlabel('False Positive Rate')
-        plt.ylabel('True Positive Rate')
+        plt.xlabel('False Positive Rate'); plt.ylabel('True Positive Rate')
         plt.title('Multi‑class ROC Curves')
         plt.legend(loc='lower right', fontsize='small', ncol=2)
         plt.tight_layout()
@@ -212,11 +264,6 @@ class TrainTCNModel:
         converter.target_spec.supported_types = [tf.float32]
         tfl = converter.convert()
         path = self.model_path / "tcn_gesture_model.tflite"
-        with open(path,'wb') as f:
-            f.write(tfl)
+        with open(path,'wb') as f: f.write(tfl)
         size_kb = len(tfl)/1024
-        self.logger.info(f"TFLite model saved ({size_kb:.1f} KB)")
-
-if __name__ == "__main__":
-    trainer = TrainTCNModel(sequence_length=10)
-    trainer.train_and_evaluate()
+        self.logger.info(f"TFLite model saved ({size_kb:.1f} KB)")
