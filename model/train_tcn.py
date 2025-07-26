@@ -142,7 +142,6 @@ class TrainTCNModel:
         return model
     
     def generate_reports(self, model, X_test, y_test, le, history):
-        """Generate evaluation reports and plots"""
         # Classification report
         y_pred = model.predict(X_test)
         y_pred_classes = np.argmax(y_pred, axis=1)
@@ -189,6 +188,61 @@ class TrainTCNModel:
         plt.tight_layout()
         plt.savefig(self.plots_path / 'training_history.png')
         plt.close()
+
+        self.plot_roc_curve(y_test, y_pred, le)
+        
+    def plot_roc_curve(self, y_test, y_pred, le):
+        """Generate multi-class ROC curve with AUC values"""
+        from sklearn.preprocessing import label_binarize
+        from sklearn.metrics import roc_curve, auc
+        
+        # Binarize the true labels
+        classes = le.classes_
+        n_classes = len(classes)
+        y_test_bin = label_binarize(y_test, classes=np.arange(n_classes))
+        
+        # Compute ROC curve and ROC area for each class
+        fpr = dict()
+        tpr = dict()
+        roc_auc = dict()
+        
+        for i in range(n_classes):
+            fpr[i], tpr[i], _ = roc_curve(y_test_bin[:, i], y_pred[:, i])
+            roc_auc[i] = auc(fpr[i], tpr[i])
+        
+        # Compute micro-average ROC curve and area
+        fpr["micro"], tpr["micro"], _ = roc_curve(y_test_bin.ravel(), y_pred.ravel())
+        roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
+        
+        # Plot ROC curves
+        plt.figure(figsize=(10, 8))
+        
+        # Plot micro-average ROC curve
+        plt.plot(fpr["micro"], tpr["micro"],
+                 label=f'micro-average ROC curve (AUC = {roc_auc["micro"]:.2f})',
+                 color='deeppink', linestyle=':', linewidth=4)
+        
+        # Plot class-specific ROC curves
+        colors = plt.cm.rainbow(np.linspace(0, 1, n_classes))
+        for i, color in zip(range(n_classes), colors):
+            plt.plot(fpr[i], tpr[i], color=color, lw=2,
+                     label=f'ROC curve of {classes[i]} (AUC = {roc_auc[i]:.2f})')
+        
+        # Plot random guessing line
+        plt.plot([0, 1], [0, 1], 'k--', lw=2)
+        
+        # Format plot
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.05])
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.title('Multi-class ROC Curve')
+        plt.legend(loc="lower right")
+        
+        # Save plot
+        plt.savefig(self.plots_path / 'roc_curve.png')
+        plt.close()
+        self.logger.info("ROC curve plot saved to roc_curve.png")
     
     def convert_to_tflite(self, model):
         """Convert model to TensorFlow Lite format for ESP32"""
@@ -208,3 +262,4 @@ class TrainTCNModel:
         # Calculate model size
         model_size_kb = len(tflite_model) / 1024
         self.logger.info(f"TFLite model size: {model_size_kb:.2f} KB")
+
