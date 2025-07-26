@@ -120,19 +120,3 @@ python quantize_model.py --input model/tcn_model.tflite --output model/tcn_model
 
 Special thanks to Rabin Rai and Sanjeep Kumar Sharma for their invaluable contributions and support.
 
-## License
-
-This project is part of the MotionX research initiative. Licensed under the MIT License.
-
-## Citation
-
-If you use this work in your research, please cite:
-
-```bibtex
-@article{adhikari2024gesture,
-  title={Gesture Classification Using Custom Dataset},
-  author={Adhikari, Kiman and Joshi, Sagar},
-  year={2024},
-  institution={Thapathali Campus, Kathmandu, Nepal}
-}
-```
