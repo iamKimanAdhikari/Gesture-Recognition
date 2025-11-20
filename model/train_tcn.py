@@ -1,5 +1,5 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # Force CPU-only mode
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  #CPU-only mode
 
 import time
 import pickle
@@ -23,7 +23,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from data_preprocessing._setup_logging import SetupLogs
-from .tcn_model import build_tcn_model  # assumes tcn_model.py is in same folder
+from .tcn_model import build_tcn_model  
 
 class TrainTCNModel:
     def __init__(self, sequence_length=10):
