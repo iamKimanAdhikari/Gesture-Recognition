@@ -1,8 +1,8 @@
 from ._setup_logging import SetupLogs  
 from ._1combine import Combine        
-from scipy.signal import butter, filtfilt
 import pickle
 import numpy as np
+import pandas as pd
 
 class CleanData(Combine):
     def __init__(self):
@@ -21,45 +21,27 @@ class CleanData(Combine):
         else:
             self.clean_data()
     
-    def butterworth_low_pass_filter(self, data, cutoff, fs, order):
-        nyquist = 0.5 * fs
-        norm_cutoff = cutoff / nyquist
-        b, a = butter(order, norm_cutoff, btype="low", analog=False)
-        return filtfilt(b, a, data)
     
-    def impute_missing_values(self, df):
-        """Impute missing values using column median strategy"""
-        self.logger.info("Imputing missing values using median strategy")
-        for col in df.columns:
-            if df[col].isna().any():
-                null_count = df[col].isna().sum()
-                median_val = df[col].median()
-                df[col].fillna(median_val, inplace=True)
-                self.logger.info(f"Imputed {null_count} missing values in '{col}' with median: {median_val:.4f}")
-        return df
+    # def impute_missing_values(self, df):
+    #     self.logger.info("Imputing missing values")
+        
+    #     numeric_cols = df.select_dtypes(include=[np.number]).columns
+        
+    #     for col in numeric_cols:
+    #         if df[col].isna().any():
+    #             null_count = df[col].isna().sum()
+    #             median_val = df[col].median()
+    #             df[col].fillna(median_val, inplace=True)
+    #             self.logger.info(f"Imputed {null_count} missing values in '{col}' with median: {median_val:.4f}")
+    #     return df
 
-    def clean_data(self, cutoff=10, fs=100, order=5):
+    def clean_data(self):
         self.logger.info("Cleaning combined dataset")
         try:
-            # Create a copy of combined data
             self.cleaned_df = self.combined_df.copy()
             
-            # 1. Impute missing values
-            self.cleaned_df = self.impute_missing_values(self.cleaned_df)
+            # self.cleaned_df = self.impute_missing_values(self.cleaned_df)
             
-            # 2. Apply low-pass filter to finger columns
-            filter_columns = ["Index", "Middle", "Ring"]
-            for col in filter_columns:
-                if col in self.cleaned_df.columns:
-                    try:
-                        self.cleaned_df[col] = self.butterworth_low_pass_filter(
-                            self.cleaned_df[col], cutoff, fs, order
-                        )
-                        self.logger.info(f"Applied low-pass filter to {col}")
-                    except Exception as e:
-                        self.logger.error(f"Error filtering {col}: {e}")
-            
-            # 3. Final null check
             null_counts = self.cleaned_df.isnull().sum()
             total_nulls = null_counts.sum()
             if total_nulls > 0:

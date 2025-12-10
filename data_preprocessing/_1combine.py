@@ -26,21 +26,20 @@ class Combine(JsontoCsv):
         self.logger.info(f"Combining relevant files from {self.raw_csv_dir}")
         try:
             master_list = []
+            
+            # Iterate through all gestures
             for gesture in self.sorted_gestures:
-                last_ts = 0
-                segments = []
+                
                 for path in self.gestures_dict[gesture]:
                     df = pd.read_csv(path)
-                    df["timestamps"] = df["timestamps"] + last_ts
-                    last_ts = df["timestamps"].iloc[-1] + df["timestamps"].diff().mean()
-                    segments.append(df)
-                
-                full_df = pd.concat(segments, ignore_index=True)
-                master_list.append(full_df)
+                    
+                    if "RecordingID" not in df.columns:
+                        df["RecordingID"] = path.stem
+                        
+                    master_list.append(df)
             
             self.combined_df = pd.concat(master_list, ignore_index=True)
-            if "timestamps" in self.combined_df.columns:
-                self.combined_df = self.combined_df.drop(columns=["timestamps"])
+            
             
             all_path = self.processed_dir / "allgestures_processed.csv"
             self.combined_df.to_csv(all_path, index=False)
