@@ -47,46 +47,23 @@ class JsontoCsv(GetFiles):
 
                     # --- LOGIC FOR CONTINUOUS FILES (Left/Right Click) ---
                     if stem in ["LeftClick", "RightClick"]:
-                        # 1. Map columns and clean
+                        # 1. Map columns correctly (Rename instead of replace with NaN)
                         mapping = {"Roll": "AccX", "Pitch": "AccY", "Yaw": "AccZ"}
-                        for new_col in mapping.values():
-                            df[new_col] = np.nan
-                        for orig in mapping.keys():
-                            if orig in df.columns:
-                                df.drop(columns=[orig], inplace=True)
+                        df.rename(columns=mapping, inplace=True)
                         
-                        CHUNK_SIZE = 100 
+                        # 2. Save as single continuous file (NO CHOPPING)
+                        # This allows the SegmentData class to slide a window across the full timeline
+                        unique_id = f"{stem}_continuous"
+                        df["Label"] = stem
+                        df["RecordingID"] = unique_id
                         
-                        total_samples = len(df)
-                        num_chunks = int(np.ceil(total_samples / CHUNK_SIZE))
+                        csv_filename = f"{unique_id}_raw.csv"
+                        output_path = self.raw_csv_dir / csv_filename
+                        df.to_csv(output_path, index=False)
                         
-                        self.logger.info(f"Splitting {stem} ({total_samples} rows) into {num_chunks} files.")
-
-                        for i in range(num_chunks):
-                            start_idx = i * CHUNK_SIZE
-                            end_idx = start_idx + CHUNK_SIZE
-                            
-                            chunk_df = df.iloc[start_idx:end_idx].copy()
-                            
-                            # Reset time for the new file
-                            if not chunk_df.empty:
-                                start_time = chunk_df['timestamps'].iloc[0]
-                                chunk_df['timestamps'] = chunk_df['timestamps'] - start_time
-                            
-                            # Generate Unique ID
-                            unique_id = f"{stem}_part{i+1:03d}" 
-                            chunk_df["Label"] = stem
-                            chunk_df["RecordingID"] = unique_id
-                            
-                            csv_filename = f"{unique_id}_raw.csv"
-                            output_path = self.raw_csv_dir / csv_filename
-                            chunk_df.to_csv(output_path, index=False)
-                            
-                            # Update Cache
-                            self.csv_dfs[unique_id] = chunk_df
-                            
-                        # Mark main stem as processed
-                        self.csv_dfs[stem] = "Processed_Split"
+                        # Update Cache
+                        self.csv_dfs[unique_id] = df
+                        self.csv_dfs[stem] = "Processed_Continuous"
 
                     # --- LOGIC FOR STANDARD FILES ---
                     else:
